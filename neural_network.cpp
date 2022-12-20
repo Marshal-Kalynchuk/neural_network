@@ -31,8 +31,8 @@ class NeuralNetwork {
 
       for (int i = 0; i < num_layers_; i++) {
 
-        int num_inputs = get_num_inputs(i);
-        int num_outputs = get_num_outputs(i);
+        int num_inputs = get_num_inputs_(i);
+        int num_outputs = get_num_outputs_(i);
 
         // Initialize the weights and biases for this layer
         weights_[i] = new double*[num_outputs];
@@ -41,9 +41,9 @@ class NeuralNetwork {
         for (int j = 0; j < num_outputs; j++) {
           weights_[i][j] = new double[num_inputs];
           for (int k = 0; k < num_inputs; k++){
-            weights_[i][j][k] = randomValue(-0.5, 0.5);
+            weights_[i][j][k] = randomValue_(-0.5, 0.5);
           }
-          biases_[i][j] = randomValue(-0.5, 0.5);
+          biases_[i][j] = randomValue_(-0.5, 0.5);
         }
         
       }
@@ -70,7 +70,7 @@ class NeuralNetwork {
     // Destructor
     ~NeuralNetwork(){
       for (int i = 0; i < num_layers_; i++){
-        int num_outputs = get_num_outputs(i);
+        int num_outputs = get_num_outputs_(i);
         for (int j = 0; j < num_outputs; j++) 
           delete[] weights_[i][j];
         delete[] biases_[i];
@@ -97,8 +97,8 @@ class NeuralNetwork {
       // Loop over the layers of the network
       for (int i = 0; i < num_layers_; i++) {
 
-        int num_inputs = get_num_inputs(i);
-        int num_outputs = get_num_outputs(i);
+        int num_inputs = get_num_inputs_(i);
+        int num_outputs = get_num_outputs_(i);
        
         // Calculate the weighted sum of the inputs for each node in the next layer
         for (int j = 0; j < num_outputs; j++) {
@@ -117,36 +117,55 @@ class NeuralNetwork {
     }
 
     // Backpropagation method
-    void backpropagate(double* targets, double learningRate){
-      int num_layers = num_hidden_layers_ + 1; // +1 for output layer
+    void backpropagate(double* targets, double learning_rate){
+      int num_inputs, num_outputs;
+      double output, sum;
 
       // Calculate the error in the output layer
       for (int i = 0; i < num_outputs_; i++){
-        double output = activations_[num_layers][i];
-        errors_[num_layers][i] = (targets[i] - output) * output * (1.0 - output);
+        output = activations_[num_layers_][i];
+        errors_[num_layers_][i] = (targets[i] - output) * output * (1.0 - output);
       }
 
       // Calculate the errors in the hidden layers
-      for (int i = num_layers - 1; i > 0; i--){
+      for (int i = num_layers_ - 1; i > 0; i--){
         // Calculate the number of nodes
-        int num_inputs = 0;
-        int num_outputs = 0;
-
+        num_inputs = get_num_inputs_(i);
+        num_outputs = get_num_outputs_(i);
         for (int j = 0; j < num_inputs; j++){
-
+          output = activations_[i][j];
+          sum = 0.0;
+          for (int k = 0; k < num_outputs; k++){
+            sum += weights_[i][j][k] * errors_[i + 1][k];
+          }
+          errors_[i][j] = sum * output * (1.0 - output);
+        }
+      }
+      
+      // Update weights and biases
+      for (int i = num_layers_; i > 0; i--){
+        num_inputs_ = get_num_inputs_(i - 1);
+        num_outputs_ = get_num_outputs_(i - 1);
+        double error;
+        for (int j = 0; j < num_outputs; j++){
+          error = errors_[i][j];
+          for (int k = 0; k < num_inputs; k++){
+            weights_[i - 1][j][k] += learning_rate * activations_[i - 1][k] * error;
+          }
+          biases_[i - 1][j] += learning_rate * error;
         }
       }
     }
 
-    int get_num_inputs(int layer_index){
+    int get_num_inputs_(int layer_index){
       return (layer_index == 0) ? num_inputs_ : num_nodes_per_hidden_layer_[layer_index - 1];
     }
 
-    int get_num_outputs(int layer_index){
+    int get_num_outputs_(int layer_index){
       return (layer_index == num_layers_ - 1) ? num_outputs_ : num_nodes_per_hidden_layer_[layer_index];
     }
 
-    double randomValue(double min, double max) {
+    double randomValue_(double min, double max) {
       std::random_device rd;
       std::mt19937 gen(rd());
       std::uniform_real_distribution<> dist(min, max);
