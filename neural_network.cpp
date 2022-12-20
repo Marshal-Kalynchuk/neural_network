@@ -95,11 +95,10 @@ class NeuralNetwork {
         activations_[0][i] = inputs[i];
       }
       // Loop over the layers of the network
+      int num_inputs, num_outputs;
       for (int i = 0; i < num_layers_; i++) {
-
-        int num_inputs = get_num_inputs_(i);
-        int num_outputs = get_num_outputs_(i);
-       
+        num_inputs = get_num_inputs_(i);
+        num_outputs = get_num_outputs_(i);
         // Calculate the weighted sum of the inputs for each node in the next layer
         for (int j = 0; j < num_outputs; j++) {
           double weighted_sum = 0.0;
@@ -126,7 +125,6 @@ class NeuralNetwork {
         output = activations_[num_layers_][i];
         errors_[num_layers_][i] = (targets[i] - output) * output * (1.0 - output);
       }
-
       // Calculate the errors in the hidden layers
       for (int i = num_layers_ - 1; i > 0; i--){
         // Calculate the number of nodes
@@ -136,16 +134,15 @@ class NeuralNetwork {
           output = activations_[i][j];
           sum = 0.0;
           for (int k = 0; k < num_outputs; k++){
-            sum += weights_[i][j][k] * errors_[i + 1][k];
+            sum += weights_[i][k][j] * errors_[i + 1][k];
           }
           errors_[i][j] = sum * output * (1.0 - output);
         }
       }
-      
       // Update weights and biases
       for (int i = num_layers_; i > 0; i--){
-        num_inputs_ = get_num_inputs_(i - 1);
-        num_outputs_ = get_num_outputs_(i - 1);
+        num_inputs = get_num_inputs_(i - 1);
+        num_outputs = get_num_outputs_(i - 1);
         double error;
         for (int j = 0; j < num_outputs; j++){
           error = errors_[i][j];
