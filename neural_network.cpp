@@ -123,7 +123,7 @@ class NeuralNetwork {
       // Calculate the error in the output layer
       for (int i = 0; i < num_outputs_; i++){
         output = activations_[num_layers_][i];
-        errors_[num_layers_][i] = (targets[i] - output) * output * (1.0 - output);
+        errors_[num_layers_][i] = (targets[i] - output) * derivative_of_activation_(output);
       }
       // Calculate the errors in the hidden layers
       for (int i = num_layers_ - 1; i > 0; i--){
@@ -136,7 +136,7 @@ class NeuralNetwork {
           for (int k = 0; k < num_outputs; k++){
             sum += weights_[i][k][j] * errors_[i + 1][k];
           }
-          errors_[i][j] = sum * output * (1.0 - output);
+          errors_[i][j] = sum * derivative_of_activation_(output);
         }
       }
       // Update weights and biases
@@ -152,6 +152,10 @@ class NeuralNetwork {
           biases_[i - 1][j] += learning_rate * error;
         }
       }
+    }
+
+    double derivative_of_activation_(double output){
+      return 1 / (1 + exp(-output));
     }
 
     int get_num_inputs_(int layer_index){
