@@ -108,7 +108,7 @@ class NeuralNetwork {
           // Add the bias of the node
           weighted_sum += biases_[i][j];
           // Calculate the activation of the node using the sigmoid function
-          activations_[i + 1][j] = 1.0 / (1.0 + exp(-weighted_sum));
+          activations_[i + 1][j] = activation_function_(weighted_sum);
         }
       }
       // Return the activations of the output layer
@@ -116,14 +116,42 @@ class NeuralNetwork {
     }
 
     // Backpropagation method
-    void backpropagate(double* targets, double learning_rate){
+    void backpropagate(double *targets, double learning_rate){
+      calculate_error_(targets);
+      update_weights_and_biases_(learning_rate);
+    }
+    // Backpropagation method
+    void backpropagate(double **targets, double learning_rate, int num_targets){
+      // Iterate over all the targets
+      for (int i = 0; i < num_targets; i++){
+        calculate_error_(targets[i]);
+        update_weights_and_biases_(learning_rate);
+      }
+    }
+    void update_weights_and_biases_(double learning_rate){
+      int num_inputs, num_outputs;
+      double error;
+      // Update weights and biases
+      for (int i = num_layers_; i > 0; i--){
+        num_inputs = get_num_inputs_(i - 1);
+        num_outputs = get_num_outputs_(i - 1);
+        for (int j = 0; j < num_outputs; j++){
+          error = errors_[i][j];
+          for (int k = 0; k < num_inputs; k++){
+            weights_[i - 1][j][k] += learning_rate * activations_[i - 1][k] * error;
+          }
+          biases_[i - 1][j] += learning_rate * error;
+        }
+      }
+    }
+
+    void calculate_error_(double *targets){
       int num_inputs, num_outputs;
       double output, sum;
-
       // Calculate the error in the output layer
       for (int i = 0; i < num_outputs_; i++){
         output = activations_[num_layers_][i];
-        errors_[num_layers_][i] = (targets[i] - output) * derivative_of_activation_(output);
+        errors_[num_layers_][i] = (targets[i] - output) * derivative_of_activation_function_(output);
       }
       // Calculate the errors in the hidden layers
       for (int i = num_layers_ - 1; i > 0; i--){
@@ -136,26 +164,17 @@ class NeuralNetwork {
           for (int k = 0; k < num_outputs; k++){
             sum += weights_[i][k][j] * errors_[i + 1][k];
           }
-          errors_[i][j] = sum * derivative_of_activation_(output);
-        }
-      }
-      // Update weights and biases
-      for (int i = num_layers_; i > 0; i--){
-        num_inputs = get_num_inputs_(i - 1);
-        num_outputs = get_num_outputs_(i - 1);
-        double error;
-        for (int j = 0; j < num_outputs; j++){
-          error = errors_[i][j];
-          for (int k = 0; k < num_inputs; k++){
-            weights_[i - 1][j][k] += learning_rate * activations_[i - 1][k] * error;
-          }
-          biases_[i - 1][j] += learning_rate * error;
+          errors_[i][j] = sum * derivative_of_activation_function_(output);
         }
       }
     }
 
-    double derivative_of_activation_(double output){
-      return 1 / (1 + exp(-output));
+    double activation_function_(double output){
+      return 1.0 / (1.0 + exp(-output));
+    }
+
+    double derivative_of_activation_function_(double output){
+      return output * (1 - output);
     }
 
     int get_num_inputs_(int layer_index){
