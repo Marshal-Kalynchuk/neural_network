@@ -20,6 +20,7 @@ int main(){
   // Dataset parameters
   int data_size = 28*28;
   int target_size = 10;
+  int max_pixel_value = 255;
 
   // Initialize arrays to hold training data
   int train_size = 60000;
@@ -49,6 +50,7 @@ int main(){
     std::string line;
     int count = 0;
     int label = 0;
+    int value = 0;
     while (std::getline(train_file_stream, line))
     {
         std::istringstream iss(line);
@@ -56,7 +58,8 @@ int main(){
         train_targets[count][label] = 1; 
         for (int i = 0; i < data_size; i++)
         {
-            iss >> train_data[count][i];
+            iss >> value;
+            train_data[count][i] = value / max_pixel_value;
         }
         count++;
     }
@@ -86,7 +89,7 @@ int main(){
       print_element(train_targets[i][j], num_width);
     cout << "\n================================================================" << endl;
 
-    nn.backpropagate(train_targets[i], 0.2);
+    nn.backpropagate(train_targets[i], 0.01);
   } 
 
   // Clean up allocated memory
